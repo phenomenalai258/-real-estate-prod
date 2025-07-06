@@ -114,7 +114,7 @@ export const getCurrentResidences = async (
   } catch (err: any) {
     res
       .status(500)
-      .json({ message: `Error retrieving manager properties: ${err.message}` });
+      .json({ message: `Error retrieving tenant residences: ${err.message}` });
   }
 };
 
