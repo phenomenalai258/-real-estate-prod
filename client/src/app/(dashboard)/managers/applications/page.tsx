@@ -30,7 +30,7 @@ const Applications = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
-  const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
+  const [updateApplicationStatus, { isLoading: isDeciding }] = useUpdateApplicationStatusMutation();
 
   const handleStatusChange = async (id: number, status: string) => {
     await updateApplicationStatus({ id, status });
@@ -47,8 +47,8 @@ const Applications = () => {
   return (
     <div className="dashboard-container">
       <Header
-        title="Applications"
-        subtitle="View and manage applications for your properties"
+        title="Candidaturas"
+        subtitle="Consulte e responda às candidaturas aos seus imóveis"
       />
       <Tabs
         value={activeTab}
@@ -56,10 +56,10 @@ const Applications = () => {
         className="w-full my-5"
       >
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="denied">Denied</TabsTrigger>
+          <TabsTrigger value="all">Todas</TabsTrigger>
+          <TabsTrigger value="pending">Em análise</TabsTrigger>
+          <TabsTrigger value="approved">Aprovadas</TabsTrigger>
+          <TabsTrigger value="denied">Recusadas</TabsTrigger>
         </TabsList>
         {["all", "pending", "approved", "denied"].map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-5 w-full">
@@ -88,10 +88,10 @@ const Applications = () => {
                       <div className="flex flex-wrap items-center">
                         <File className="w-5 h-5 mr-2 flex-shrink-0" />
                         <span className="mr-2">
-                          Application submitted on{" "}
+                          Candidatura enviada em{" "}
                           {new Date(
                             application.applicationDate
-                          ).toLocaleDateString()}
+                          ).toLocaleDateString("pt-MZ")}
                           .
                         </span>
                         <CircleCheckBig className="w-5 h-5 mr-2 flex-shrink-0" />
@@ -105,11 +105,11 @@ const Applications = () => {
                           }`}
                         >
                           {application.status === "Approved" &&
-                            "This application has been approved."}
+                            "Candidatura aprovada. Contacte a outra parte para combinar as condições."}
                           {application.status === "Denied" &&
-                            "This application has been denied."}
+                            "Candidatura recusada."}
                           {application.status === "Pending" &&
-                            "This application is pending review."}
+                            "Candidatura em análise."}
                         </span>
                       </div>
                     </div>
@@ -118,50 +118,37 @@ const Applications = () => {
                     <div className="flex gap-2">
                       <Link
                         href={`/managers/properties/${application.property.id}`}
-                        className={`bg-white border border-gray-300 text-gray-700 py-2 px-4 
+                        className={`bg-white border border-gray-300 text-gray-700 py-2 px-4
                           rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
                         scroll={false}
                       >
                         <Hospital className="w-5 h-5 mr-2" />
-                        Property Details
+                        Detalhes do imóvel
                       </Link>
-                      {application.status === "Approved" && (
-                        <button
-                          className={`bg-white border border-gray-300 text-gray-700 py-2 px-4
-                          rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
-                        >
-                          <Download className="w-5 h-5 mr-2" />
-                          Download Agreement
-                        </button>
-                      )}
+
                       {application.status === "Pending" && (
                         <>
                           <button
                             className="px-4 py-2 text-sm text-white bg-green-600 rounded hover:bg-green-500"
+                            disabled={isDeciding}
                             onClick={() =>
                               handleStatusChange(application.id, "Approved")
                             }
                           >
-                            Approve
+                            Aprovar
                           </button>
                           <button
                             className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-500"
+                            disabled={isDeciding}
                             onClick={() =>
                               handleStatusChange(application.id, "Denied")
                             }
                           >
-                            Deny
+                            Recusar
                           </button>
                         </>
                       )}
-                      {application.status === "Denied" && (
-                        <button
-                          className={`bg-gray-800 text-white py-2 px-4 rounded-md flex items-center
-                          justify-center hover:bg-secondary-500 hover:text-primary-50`}
-                        >
-                          Contact User
-                        </button>
-                      )}
+
                     </div>
                   </div>
                 </ApplicationCard>

@@ -17,7 +17,7 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  * Model Property
  * 
  */
-export type Property = $Result.DefaultSelection<Prisma.$PropertyPayload>
+export type Property = $Result.DefaultSelection<Prisma.$PropertyPayload> & { isPublished: boolean }
 /**
  * Model Manager
  * 

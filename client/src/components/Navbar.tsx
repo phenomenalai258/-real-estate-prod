@@ -50,17 +50,12 @@ const Navbar = () => {
             scroll={false}
           >
             <div className="flex items-center gap-3">
-              <Image
-                src="/logo.svg"
-                alt="Rentiful Logo"
-                width={24}
-                height={24}
-                className="w-6 h-6"
-              />
+
+              <Image src="/socasas-logo.jpg" alt="SÓ CASAS" width={48} height={48} className="rounded-full" />
               <div className="text-xl font-bold">
-                RENT
+                socasas
                 <span className="text-secondary-500 font-light hover:!text-primary-300">
-                  IFUL
+
                 </span>
               </div>
             </div>
@@ -80,13 +75,13 @@ const Navbar = () => {
               {authUser.userRole?.toLowerCase() === "manager" ? (
                 <>
                   <Plus className="h-4 w-4" />
-                  <span className="hidden md:block ml-2">Add New Property</span>
+                  <span className="hidden md:block ml-2">Publicar imóvel</span>
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4" />
                   <span className="hidden md:block ml-2">
-                    Search Properties
+                    Pesquisar imóveis
                   </span>
                 </>
               )}
@@ -95,7 +90,7 @@ const Navbar = () => {
         </div>
         {!isDashboardPage && (
           <p className="text-primary-200 hidden md:block">
-            Discover your perfect rental apartment with our advanced search
+            Arrendamento mensal em Moçambique
           </p>
         )}
         <div className="flex items-center gap-5">
@@ -164,7 +159,7 @@ const Navbar = () => {
                   variant="outline"
                   className="text-white border-white bg-transparent hover:bg-white hover:text-primary-700 rounded-lg"
                 >
-                  Sign In
+                  Entrar
                 </Button>
               </Link>
               <Link href="/signup">
@@ -172,7 +167,7 @@ const Navbar = () => {
                   variant="secondary"
                   className="text-white bg-secondary-600 hover:bg-white hover:text-primary-700 rounded-lg"
                 >
-                  Sign Up
+                  Criar conta
                 </Button>
               </Link>
             </>

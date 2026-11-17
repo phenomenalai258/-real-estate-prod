@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AmenityIcons, HighlightIcons } from "@/lib/constants";
 import { formatEnumString } from "@/lib/utils";
@@ -12,7 +13,7 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
     isLoading,
   } = useGetPropertyQuery(propertyId);
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return <>A carregar…</>;
   if (isError || !property) {
     return <>Property not Found</>;
   }
@@ -43,7 +44,7 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
       {/* Highlights */}
       <div className="mt-12 mb-16">
         <h3 className="text-xl font-semibold text-primary-800 dark:text-primary-100">
-          Highlights
+          Destaques
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4 w-full">
           {property.highlights.map((highlight: HighlightEnum) => {
@@ -84,19 +85,19 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
             <hr />
             <div className="flex justify-between py-2 bg-secondary-50">
               <span className="text-primary-700 font-medium">
-                Application Fee
+                Taxa de candidatura (MT)
               </span>
               <span className="text-primary-700">
-                ${property.applicationFee}
+                {formatMoney(property.applicationFee)}
               </span>
             </div>
             <hr />
             <div className="flex justify-between py-2 bg-secondary-50">
               <span className="text-primary-700 font-medium">
-                Security Deposit
+                Caução (MT)
               </span>
               <span className="text-primary-700">
-                ${property.securityDeposit}
+                {formatMoney(property.securityDeposit)}
               </span>
             </div>
             <hr />

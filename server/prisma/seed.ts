@@ -1,3 +1,4 @@
+if (process.env.ALLOW_DESTRUCTIVE_SEED !== "yes") throw new Error("Seed bloqueado: apaga dados. Use apenas numa base local descartável.");
 import { PrismaClient, Prisma } from "@prisma/client";
 import fs from "fs";
 import path from "path";

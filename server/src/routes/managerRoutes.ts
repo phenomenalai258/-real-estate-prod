@@ -6,7 +6,10 @@ import {
   getManagerProperties,
 } from "../controllers/managerControllers";
 
+import { requireOwnProfile } from "../middleware/authMiddleware";
+
 const router = express.Router();
+router.use("/:cognitoId", requireOwnProfile);
 
 router.get("/:cognitoId", getManager);
 router.put("/:cognitoId", updateManager);

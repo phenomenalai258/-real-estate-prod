@@ -1,3 +1,5 @@
+import { formatArea } from "@/lib/locale";
+import { formatMoney } from "@/lib/locale";
 import { Bath, Bed, Heart, House, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -92,13 +94,13 @@ const CardCompact = ({
             </span>
             <span className="flex items-center">
               <House className="w-4 h-4 mr-1" />
-              {property.squareFeet}
+              {formatArea(property.squareFeet)} m²
             </span>
           </div>
 
           <p className="text-base font-bold">
-            ${property.pricePerMonth.toFixed(0)}
-            <span className="text-gray-600 text-xs font-normal"> /mo</span>
+            {formatMoney(property.pricePerMonth)}
+            <span className="text-gray-600 text-xs font-normal"> /mês</span>
           </p>
         </div>
       </div>

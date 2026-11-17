@@ -8,7 +8,10 @@ import {
   removeFavoriteProperty,
 } from "../controllers/tenantControllers";
 
+import { requireOwnProfile } from "../middleware/authMiddleware";
+
 const router = express.Router();
+router.use("/:cognitoId", requireOwnProfile);
 
 router.get("/:cognitoId", getTenant);
 router.put("/:cognitoId", updateTenant);

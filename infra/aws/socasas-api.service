@@ -1,0 +1,25 @@
+[Unit]
+Description=socasas API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=socasas
+Group=socasas
+WorkingDirectory=/opt/socasas/current/server
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3002
+EnvironmentFile=/etc/socasas/api.env
+ExecStart=/usr/bin/node dist/src/index.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

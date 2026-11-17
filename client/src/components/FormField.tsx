@@ -137,7 +137,8 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
               field.onChange(files);
             }}
             allowMultiple={true}
-            labelIdle={`Drag & Drop your images or <span class="filepond--label-action">Browse</span>`}
+            maxFiles={10}
+            labelIdle={`Arraste as fotografias ou <span class="filepond--label-action">escolha os ficheiros</span>`}
             credits={false}
           />
         );
@@ -145,6 +146,7 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
         return (
           <Input
             type="number"
+            step="any"
             placeholder={placeholder}
             {...field}
             className={`border-gray-200 p-4 ${inputClassName}`}

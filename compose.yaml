@@ -1,0 +1,18 @@
+services:
+  database:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: socasas
+      POSTGRES_USER: socasas
+      POSTGRES_PASSWORD: socasas_local
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - socasas_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socasas -d socasas"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+volumes:
+  socasas_data:

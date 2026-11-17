@@ -1,3 +1,4 @@
+import { formatMoney } from "./locale";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
@@ -7,25 +8,20 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatEnumString(str: string) {
-  return str.replace(/([A-Z])/g, " $1").trim();
+  const labels: Record<string, string> = {"Rooms":"Quarto","Tinyhouse":"Casa pequena","Apartment":"Apartamento","Villa":"Moradia","Townhouse":"Moradia geminada","Cottage":"Casa de campo","WasherDryer":"Máquina de lavar e secar","AirConditioning":"Ar condicionado","Dishwasher":"Máquina de lavar loiça","HighSpeedInternet":"Internet rápida","HighSpeedInternetAccess":"Internet rápida","HardwoodFloors":"Pavimento de madeira","WalkInClosets":"Roupeiros","Microwave":"Micro-ondas","Refrigerator":"Frigorífico","Pool":"Piscina","Gym":"Ginásio","Parking":"Estacionamento","PetsAllowed":"Aceita animais","WiFi":"Wi-Fi","Heating":"Aquecimento","SmokeFree":"Sem fumo","CableReady":"TV por cabo","SatelliteTV":"TV por satélite","DoubleVanities":"Lavatório duplo","TubShower":"Banheira e duche","Intercom":"Intercomunicador","SprinklerSystem":"Sistema de rega","RecentlyRenovated":"Remodelado","CloseToTransit":"Perto de transportes","GreatView":"Boa vista","QuietNeighborhood":"Bairro tranquilo"};
+  return labels[str] || str.replace(/([A-Z])/g, " $1").trim();
 }
 
 export function formatPriceValue(value: number | null, isMin: boolean) {
-  if (value === null || value === 0)
-    return isMin ? "Any Min Price" : "Any Max Price";
-  if (value >= 1000) {
-    const kValue = value / 1000;
-    return isMin ? `$${kValue}k+` : `<$${kValue}k`;
-  }
-  return isMin ? `$${value}+` : `<$${value}`;
+  if (value === null) return isMin ? "Renda mínima" : "Renda máxima";
+  return (isMin ? "Desde " : "Até ") + formatMoney(value);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function cleanParams(params: Record<string, any>): Record<string, any> {
   return Object.fromEntries(
     Object.entries(params).filter(
       (
-        [_, value] // eslint-disable-line @typescript-eslint/no-unused-vars
+        [_, value]
       ) =>
         value !== undefined &&
         value !== "any" &&
@@ -52,7 +48,7 @@ export const withToast = async <T>(
     return result;
   } catch (err) {
     if (error) toast.error(error);
-    throw err;
+    return undefined;
   }
 };
 

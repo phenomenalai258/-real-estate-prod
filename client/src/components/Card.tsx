@@ -1,3 +1,5 @@
+import { formatArea } from "@/lib/locale";
+import { formatMoney } from "@/lib/locale";
 import { Bath, Bed, Heart, House, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,12 +32,12 @@ const Card = ({
         <div className="absolute bottom-4 left-4 flex gap-2">
           {property.isPetsAllowed && (
             <span className="bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full">
-              Pets Allowed
+              Aceita animais
             </span>
           )}
           {property.isParkingIncluded && (
             <span className="bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full">
-              Parking Included
+              Estacionamento incluído
             </span>
           )}
         </div>
@@ -80,8 +82,8 @@ const Card = ({
             </span>
           </div>
           <p className="text-lg font-bold mb-3">
-            ${property.pricePerMonth.toFixed(0)}{" "}
-            <span className="text-gray-600 text-base font-normal"> /month</span>
+            {formatMoney(property.pricePerMonth)}{" "}
+            <span className="text-gray-600 text-base font-normal"> /mês</span>
           </p>
         </div>
         <hr />
@@ -96,7 +98,7 @@ const Card = ({
           </span>
           <span className="flex items-center">
             <House className="w-5 h-5 mr-2" />
-            {property.squareFeet} sq ft
+            {formatArea(property.squareFeet)} m²
           </span>
         </div>
       </div>
