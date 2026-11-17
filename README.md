@@ -1,6 +1,6 @@
 # socasas
 
-Plataforma de arrendamento mensal em Moçambique, começando por Maputo.
+Plataforma imobiliária para Moçambique, começando por Maputo. Âmbito confirmado: compra/venda e arrendamento, com modalidade e preço escolhidos pelo proprietário. O fluxo implementado actualmente é o arrendamento mensal; a modalidade de venda continua pendente.
 
 ## Estado desta etapa
 
@@ -50,7 +50,11 @@ A área histórica permanece em pés quadrados na base; a interface recebe e apr
 
 ## Serviços externos
 
+Decisão de alojamento: **AWS**. Plano: Amplify Hosting para Next.js, EC2 para a API, RDS PostgreSQL/PostGIS, Cognito e S3 com CloudFront. Ver [configuração AWS e passos de instalação](docs/aws-setup.md). Os ficheiros estão preparados para revisão; ainda não foram criados recursos AWS.
+
 Usar uma conta de desenvolvimento separada. O Cognito precisa do atributo `custom:role`, registo/verificação por email e um app client público sem client secret. A API precisa dos identificadores do mesmo pool/client. O S3 precisa de uma política de acesso a imagens e credenciais/role de escrita restritas ao prefixo de imóveis. Configurar CORS, URLs de imagens e domínio apenas após revisão.
+
+Novas fotografias requerem `S3_PUBLIC_BASE_URL` na API e `NEXT_PUBLIC_IMAGE_BASE_URL` no frontend, apontando para a mesma origem HTTPS de CloudFront. O bucket pode permanecer privado. O template `infra/aws/foundation.json` prepara Cognito, S3, CloudFront e permissões da API; a criação de EC2/RDS/rede e o deploy são etapas separadas.
 
 Ver `docs/launch-plan.md` para decisões e tarefas ainda pendentes.
 

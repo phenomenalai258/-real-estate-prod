@@ -31,3 +31,17 @@ test('display formats meticais and converts historical square feet to square met
  assert.match(formatMoney(15000),/MT/);assert.ok(!formatMoney(15000).includes('$'));
  const area=formatArea(1000).replace(',','.');assert.equal(Number(area),92.9);
 });
+
+test('hosting validation requires AWS configuration but never prints secret values',()=>{
+ const {spawnSync}=require('node:child_process');
+ const required=['NEXT_PUBLIC_API_BASE_URL','NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID','NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID','NEXT_PUBLIC_IMAGE_BASE_URL'];
+ const env={...process.env};for(const name of required)delete env[name];
+ const script=path.join(__dirname,'../scripts/check-hosting-env.cjs');
+ assert.equal(spawnSync(process.execPath,[script],{env}).status,1);
+ const configured={...env,NEXT_PUBLIC_API_BASE_URL:'https://api.example.com',NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID:'eu-west-1_test',NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID:'test-client',NEXT_PUBLIC_IMAGE_BASE_URL:'https://images.example.com'};
+ assert.equal(spawnSync(process.execPath,[script],{env:configured}).status,0);
+ for(const value of ['http://api.example.com','https://user:secret-value@api.example.com']){
+  const result=spawnSync(process.execPath,[script],{env:{...configured,NEXT_PUBLIC_API_BASE_URL:value},encoding:'utf8'});
+  assert.equal(result.status,1);assert.ok(!result.stderr.includes('secret-value'));
+ }
+});

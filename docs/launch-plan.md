@@ -2,7 +2,7 @@
 
 ## Âmbito aprovado
 
-Arrendamento mensal em Moçambique, começando por Maputo. Proprietários/gestores publicam imóveis; interessados candidatam-se; proprietários aprovam ou recusam. Aprovação sem contrato automático. Nenhuma integração M-Pesa enquanto condições e acesso não estiverem claros. Nome confirmado: socasas. Logótipo obtido da página oficial indicada pelo proprietário: https://www.facebook.com/SOCASAS.
+Compra/venda e arrendamento em Moçambique, começando por Maputo, com modalidade e preço escolhidos pelo proprietário. O fluxo actual implementa arrendamento mensal; acrescentar venda à criação/edição, pesquisa, preços e pedidos de contacto antes de anunciar essa modalidade. Proprietários/gestores publicam imóveis; interessados candidatam-se; proprietários aprovam ou recusam. Aprovação sem contrato automático. Nenhuma integração M-Pesa enquanto condições e acesso não estiverem claros. Nome confirmado: socasas. Logótipo obtido da página oficial indicada pelo proprietário: https://www.facebook.com/SOCASAS.
 
 ## Etapas para concluir
 
@@ -26,14 +26,14 @@ Quando houver acesso: construir adaptador de pagamentos separado, estados penden
 
 ## Alojamento e domínio
 
-Recomendação técnica provisória: manter a arquitectura existente para esta etapa, evitando reescrever o projecto. Comparar custos reais antes de contratar:
-- frontend Next.js numa plataforma que suporte a versão instalada;
-- API Node.js num serviço com HTTPS, variáveis privadas e logs;
-- PostgreSQL gerido com PostGIS, backups e restauro;
-- Cognito para contas e S3 para imagens, com permissões mínimas;
+Decisão confirmada: usar AWS mantendo a arquitectura existente. Comparar a configuração e os custos reais antes de criar recursos:
+- frontend Next.js no Amplify Hosting;
+- API Node.js em EC2 com HTTPS, variáveis privadas e logs;
+- RDS PostgreSQL com PostGIS, backups e restauro;
+- Cognito para contas e S3 privado com CloudFront para imagens, com permissões mínimas;
 - DNS e domínio escolhidos por ti, certificados HTTPS e email de suporte.
 
-Ainda não há fornecedor, região, orçamento ou domínio aprovados. Não foram criados serviços pagos. O domínio deve ser pesquisado quanto a disponibilidade e coerência com a marca antes da compra.
+O fornecedor é AWS; região, orçamento e domínio continuam por definir. Não foram criados serviços pagos. O domínio deve ser pesquisado quanto a disponibilidade e coerência com a marca antes da compra. Ver `aws-setup.md` para a preparação técnica e os passos que dependem da conta AWS do proprietário.
 
 ## Depende de ti
 

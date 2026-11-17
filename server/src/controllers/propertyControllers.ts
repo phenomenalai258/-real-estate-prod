@@ -11,6 +11,7 @@ import { prisma } from "../lib/prisma";
 import { HttpError, positiveId, textField } from "../lib/http";
 import { randomUUID } from "crypto";
 import { propertyUpdates } from "../lib/propertyUpdates";
+import { imageBaseUrl, imageUrl } from "../lib/imageUrls";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -270,6 +271,7 @@ export const createProperty = async (
       if (!valid) throw new HttpError(400, "Fotografia inválida.");
     }
     if (!process.env.S3_BUCKET_NAME || !process.env.AWS_REGION) throw new HttpError(503, "Armazenamento de fotografias ainda não configurado.");
+    const publicBase = imageBaseUrl();
     const photoUrls: string[] = [];
     for (const file of files) {
         const uploadParams = {
@@ -279,14 +281,13 @@ export const createProperty = async (
           ContentType: file.mimetype,
         };
 
-        const uploadResult = await new Upload({
+        await new Upload({
           client: s3Client,
           params: uploadParams,
         }).done();
 
         uploaded.push(uploadParams.Key);
-        if (!uploadResult.Location) throw new Error("Missing image location");
-        photoUrls.push(uploadResult.Location);
+        photoUrls.push(imageUrl(publicBase, uploadParams.Key));
     }
 
     const newProperty = await prisma.$transaction(async tx => {

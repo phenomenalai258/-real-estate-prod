@@ -1,5 +1,7 @@
 # EC2 Setup Instructions
 
+> Referência histórica do projecto original. Para a socasas, seguir [o guia AWS actual](../docs/aws-setup.md), com processo compilado, utilizador sem privilégios, HTTPS e credenciais fora do código. Não usar `npm run dev` nem executar a aplicação como root em produção.
+
 ## 1. Connect to EC2 Instance via EC2 Instance Connect
 
 ## 2. Install Node Version Manager (nvm) and Node.js
