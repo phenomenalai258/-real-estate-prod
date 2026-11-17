@@ -9,10 +9,11 @@ import { AmenityEnum, HighlightEnum, PropertyTypeEnum } from "@/lib/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useForm } from "react-hook-form";
+import { formatEnumString } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const NewProperty = () => {
-  const [createProperty] = useCreatePropertyMutation();
+  const [createProperty, { isLoading: isSaving }] = useCreatePropertyMutation();
   const { data: authUser } = useGetAuthUserQuery();
 
   const form = useForm<PropertyFormData>({
@@ -20,9 +21,9 @@ const NewProperty = () => {
     defaultValues: {
       name: "",
       description: "",
-      pricePerMonth: 1000,
-      securityDeposit: 500,
-      applicationFee: 100,
+      pricePerMonth: 15000,
+      securityDeposit: 0,
+      applicationFee: 0,
       isPetsAllowed: true,
       isParkingIncluded: true,
       photoUrls: [],
@@ -30,12 +31,14 @@ const NewProperty = () => {
       highlights: "",
       beds: 1,
       baths: 1,
-      squareFeet: 1000,
+      squareFeet: 100,
       address: "",
-      city: "",
-      state: "",
-      country: "",
+      city: "Maputo",
+      state: "Maputo",
+      country: "Moçambique",
       postalCode: "",
+      latitude: -25.9692,
+      longitude: 32.5732,
     },
   });
 
@@ -51,6 +54,8 @@ const NewProperty = () => {
         files.forEach((file: File) => {
           formData.append("photos", file);
         });
+      } else if (key === "squareFeet") {
+        formData.append(key, String(Math.round(Number(value) / 0.09290304)));
       } else if (Array.isArray(value)) {
         formData.append(key, JSON.stringify(value));
       } else {
@@ -60,14 +65,19 @@ const NewProperty = () => {
 
     formData.append("managerCognitoId", authUser.cognitoInfo.userId);
 
-    await createProperty(formData);
+    try {
+      await createProperty(formData).unwrap();
+      form.reset();
+    } catch {
+      form.setError("root", { message: "Não foi possível publicar. Verifique os dados e tente novamente." });
+    }
   };
 
   return (
     <div className="dashboard-container">
       <Header
-        title="Add New Property"
-        subtitle="Create a new property listing with detailed information"
+        title="Publicar imóvel"
+        subtitle="Adicione as fotografias, localização e condições do arrendamento mensal"
       />
       <div className="bg-white rounded-xl p-6">
         <Form {...form}>
@@ -77,12 +87,12 @@ const NewProperty = () => {
           >
             {/* Basic Information */}
             <div>
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+              <h2 className="text-lg font-semibold mb-4">Informação básica</h2>
               <div className="space-y-4">
-                <CustomFormField name="name" label="Property Name" />
+                <CustomFormField name="name" label="Nome do imóvel" />
                 <CustomFormField
                   name="description"
-                  label="Description"
+                  label="Descrição"
                   type="textarea"
                 />
               </div>
@@ -92,21 +102,21 @@ const NewProperty = () => {
 
             {/* Fees */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold mb-4">Fees</h2>
+              <h2 className="text-lg font-semibold mb-4">Valores indicados pelo proprietário</h2>
               <CustomFormField
                 name="pricePerMonth"
-                label="Price per Month"
+                label="Renda mensal (MT)"
                 type="number"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CustomFormField
                   name="securityDeposit"
-                  label="Security Deposit"
+                  label="Caução (MT)"
                   type="number"
                 />
                 <CustomFormField
                   name="applicationFee"
-                  label="Application Fee"
+                  label="Taxa de candidatura (MT)"
                   type="number"
                 />
               </div>
@@ -116,44 +126,44 @@ const NewProperty = () => {
 
             {/* Property Details */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold mb-4">Property Details</h2>
+              <h2 className="text-lg font-semibold mb-4">Detalhes do imóvel</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <CustomFormField
                   name="beds"
-                  label="Number of Beds"
+                  label="Quartos"
                   type="number"
                 />
                 <CustomFormField
                   name="baths"
-                  label="Number of Baths"
+                  label="Casas de banho"
                   type="number"
                 />
                 <CustomFormField
                   name="squareFeet"
-                  label="Square Feet"
+                  label="Área (m²)"
                   type="number"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <CustomFormField
                   name="isPetsAllowed"
-                  label="Pets Allowed"
+                  label="Aceita animais"
                   type="switch"
                 />
                 <CustomFormField
                   name="isParkingIncluded"
-                  label="Parking Included"
+                  label="Estacionamento incluído"
                   type="switch"
                 />
               </div>
               <div className="mt-4">
                 <CustomFormField
                   name="propertyType"
-                  label="Property Type"
+                  label="Tipo de imóvel"
                   type="select"
                   options={Object.keys(PropertyTypeEnum).map((type) => ({
                     value: type,
-                    label: type,
+                    label: formatEnumString(type),
                   }))}
                 />
               </div>
@@ -161,10 +171,10 @@ const NewProperty = () => {
 
             <hr className="my-6 border-gray-200" />
 
-            {/* Amenities and Highlights */}
+            {/* Comodidades e destaques */}
             <div>
               <h2 className="text-lg font-semibold mb-4">
-                Amenities and Highlights
+                Comodidades e destaques
               </h2>
               <div className="space-y-6">
                 <CustomFormField
@@ -173,7 +183,7 @@ const NewProperty = () => {
                   type="select"
                   options={Object.keys(AmenityEnum).map((amenity) => ({
                     value: amenity,
-                    label: amenity,
+                    label: formatEnumString(amenity),
                   }))}
                 />
                 <CustomFormField
@@ -182,7 +192,7 @@ const NewProperty = () => {
                   type="select"
                   options={Object.keys(HighlightEnum).map((highlight) => ({
                     value: highlight,
-                    label: highlight,
+                    label: formatEnumString(highlight),
                   }))}
                 />
               </div>
@@ -192,44 +202,49 @@ const NewProperty = () => {
 
             {/* Photos */}
             <div>
-              <h2 className="text-lg font-semibold mb-4">Photos</h2>
+              <h2 className="text-lg font-semibold mb-4">Fotografias</h2>
               <CustomFormField
                 name="photoUrls"
-                label="Property Photos"
+                label="Fotografias do imóvel"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
               />
             </div>
 
             <hr className="my-6 border-gray-200" />
 
-            {/* Additional Information */}
+            {/* Localização */}
             <div className="space-y-6">
               <h2 className="text-lg font-semibold mb-4">
-                Additional Information
+                Localização
               </h2>
-              <CustomFormField name="address" label="Address" />
+              <CustomFormField name="address" label="Endereço" />
               <div className="flex justify-between gap-4">
-                <CustomFormField name="city" label="City" className="w-full" />
+                <CustomFormField name="city" label="Cidade" className="w-full" />
                 <CustomFormField
                   name="state"
-                  label="State"
+                  label="Província"
                   className="w-full"
                 />
                 <CustomFormField
                   name="postalCode"
-                  label="Postal Code"
+                  label="Código postal (opcional)"
                   className="w-full"
                 />
               </div>
-              <CustomFormField name="country" label="Country" />
+              <CustomFormField name="country" label="País" />
+              <p>Confirme a localização exacta do imóvel: as coordenadas iniciais indicam o centro de Maputo.</p>
+              <CustomFormField name="latitude" label="Latitude" type="number" />
+              <CustomFormField name="longitude" label="Longitude" type="number" />
             </div>
 
+            {form.formState.errors.root && <p role="alert">{form.formState.errors.root.message}</p>}
             <Button
+              disabled={isSaving}
               type="submit"
               className="bg-primary-700 text-white w-full mt-8"
             >
-              Create Property
+              Publicar imóvel
             </Button>
           </form>
         </Form>

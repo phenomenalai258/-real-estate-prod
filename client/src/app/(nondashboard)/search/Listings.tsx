@@ -16,7 +16,7 @@ const Listings = () => {
   const { data: tenant } = useGetTenantQuery(
     authUser?.cognitoInfo?.userId || "",
     {
-      skip: !authUser?.cognitoInfo?.userId,
+      skip: !authUser?.cognitoInfo?.userId || authUser.userRole !== "tenant",
     }
   );
   const [addFavorite] = useAddFavoritePropertyMutation();
@@ -31,7 +31,7 @@ const Listings = () => {
   } = useGetPropertiesQuery(filters);
 
   const handleFavoriteToggle = async (propertyId: number) => {
-    if (!authUser) return;
+    if (!authUser || authUser.userRole !== "tenant") return;
 
     const isFavorite = tenant?.favorites?.some(
       (fav: Property) => fav.id === propertyId
@@ -50,15 +50,15 @@ const Listings = () => {
     }
   };
 
-  if (isLoading) return <>Loading...</>;
-  if (isError || !properties) return <div>Failed to fetch properties</div>;
+  if (isLoading) return <>A carregar…</>;
+  if (isError || !properties) return <div>Não foi possível carregar os imóveis. Tente novamente dentro de instantes.</div>;
 
   return (
     <div className="w-full">
       <h3 className="text-sm px-4 font-bold">
         {properties.length}{" "}
         <span className="text-gray-700 font-normal">
-          Places in {filters.location}
+          imóveis em {filters.location}
         </span>
       </h3>
       <div className="flex">

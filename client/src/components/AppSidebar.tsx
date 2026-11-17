@@ -29,23 +29,23 @@ const AppSidebar = ({ userType }: AppSidebarProps) => {
   const navLinks =
     userType === "manager"
       ? [
-          { icon: Building, label: "Properties", href: "/managers/properties" },
+          { icon: Building, label: "Imóveis", href: "/managers/properties" },
           {
             icon: FileText,
-            label: "Applications",
+            label: "Candidaturas",
             href: "/managers/applications",
           },
-          { icon: Settings, label: "Settings", href: "/managers/settings" },
+          { icon: Settings, label: "Definições", href: "/managers/settings" },
         ]
       : [
-          { icon: Heart, label: "Favorites", href: "/tenants/favorites" },
+          { icon: Heart, label: "Favoritos", href: "/tenants/favorites" },
           {
             icon: FileText,
-            label: "Applications",
+            label: "Candidaturas",
             href: "/tenants/applications",
           },
-          { icon: Home, label: "Residences", href: "/tenants/residences" },
-          { icon: Settings, label: "Settings", href: "/tenants/settings" },
+          { icon: Home, label: "Residências", href: "/tenants/residences" },
+          { icon: Settings, label: "Definições", href: "/tenants/settings" },
         ];
 
   return (
@@ -69,9 +69,10 @@ const AppSidebar = ({ userType }: AppSidebarProps) => {
               {open ? (
                 <>
                   <h1 className="text-xl font-bold text-gray-800">
-                    {userType === "manager" ? "Manager View" : "Renter View"}
+                    {userType === "manager" ? "Proprietário" : "Interessado"}
                   </h1>
                   <button
+                    aria-label="Recolher menu"
                     className="hover:bg-gray-100 p-2 rounded-md"
                     onClick={() => toggleSidebar()}
                   >
@@ -80,6 +81,7 @@ const AppSidebar = ({ userType }: AppSidebarProps) => {
                 </>
               ) : (
                 <button
+                  aria-label="Abrir menu"
                   className="hover:bg-gray-100 p-2 rounded-md"
                   onClick={() => toggleSidebar()}
                 >

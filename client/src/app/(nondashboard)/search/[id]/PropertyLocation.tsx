@@ -15,11 +15,11 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
   const mapContainerRef = useRef(null);
 
   useEffect(() => {
-    if (isLoading || isError || !property) return;
+    if (isLoading || isError || !property || !mapboxgl.accessToken) return;
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
-      style: "mapbox://styles/majesticglue/cm6u301pq008b01sl7yk1cnvb",
+      style: "mapbox://styles/mapbox/streets-v12",
       center: [
         property.location.coordinates.longitude,
         property.location.coordinates.latitude,
@@ -41,7 +41,7 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
     return () => map.remove();
   }, [property, isError, isLoading]);
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return <>A carregar…</>;
   if (isError || !property) {
     return <>Property not Found</>;
   }
@@ -49,12 +49,12 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
   return (
     <div className="py-16">
       <h3 className="text-xl font-semibold text-primary-800 dark:text-primary-100">
-        Map and Location
+        Mapa e localização
       </h3>
       <div className="flex justify-between items-center text-sm text-primary-500 mt-2">
         <div className="flex items-center text-gray-500">
           <MapPin className="w-4 h-4 mr-1 text-gray-700" />
-          Property Address:
+          Endereço:
           <span className="ml-2 font-semibold text-gray-700">
             {property.location?.address || "Address not available"}
           </span>
@@ -68,7 +68,7 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
           className="flex justify-between items-center hover:underline gap-2 text-primary-600"
         >
           <Compass className="w-5 h-5" />
-          Get Directions
+          Obter direcções
         </a>
       </div>
       <div

@@ -7,6 +7,8 @@ import React, { useState } from "react";
 const ImagePreviews = ({ images }: ImagePreviewsProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  if (!images.length) return <div className="flex h-48 items-center justify-center bg-gray-100 text-gray-600">Sem fotografias disponíveis.</div>;
+
   const handlePrev = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
@@ -26,8 +28,9 @@ const ImagePreviews = ({ images }: ImagePreviewsProps) => {
         >
           <Image
             src={image}
-            alt={`Property Image ${index + 1}`}
+            alt={`Fotografia do imóvel ${index + 1}`}
             fill
+            sizes="100vw"
             priority={index == 0}
             className="object-cover cursor-pointer transition-transform duration-500 ease-in-out"
           />
@@ -36,14 +39,16 @@ const ImagePreviews = ({ images }: ImagePreviewsProps) => {
       <button
         onClick={handlePrev}
         className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-opacity-50 p-2 rounded-full focus:outline-none focus:ring focus:ring-secondary-300"
-        aria-label="Previous image"
+        aria-label="Fotografia anterior"
+        hidden={images.length < 2}
       >
         <ChevronLeft className="text-white" />
       </button>
       <button
         onClick={handleNext}
         className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-opacity-50 p-2 rounded-full focus:outline-none focus:ring focus:ring-secondary-300"
-        aria-label="Previous image"
+        aria-label="Fotografia seguinte"
+        hidden={images.length < 2}
       >
         <ChevronRight className="text-white" />
       </button>

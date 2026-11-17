@@ -64,13 +64,14 @@ const FiltersFull = () => {
   };
 
   const handleLocationSearch = async () => {
+    if (!process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) { dispatch(setFilters(localFilters)); return; }
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           localFilters.location
         )}.json?access_token=${
           process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-        }&fuzzyMatch=true`
+        }&country=mz&language=pt&fuzzyMatch=true`
       );
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -96,7 +97,7 @@ const FiltersFull = () => {
           <div className="flex items-center">
             <Input
               placeholder="Enter location"
-              value={filters.location}
+              value={localFilters.location}
               onChange={(e) =>
                 setLocalFilters((prev) => ({
                   ...prev,
@@ -116,7 +117,7 @@ const FiltersFull = () => {
 
         {/* Property Type */}
         <div>
-          <h4 className="font-bold mb-2">Property Type</h4>
+          <h4 className="font-bold mb-2">Tipo de imóvel</h4>
           <div className="grid grid-cols-2 gap-4">
             {Object.entries(PropertyTypeIcons).map(([type, Icon]) => (
               <div
@@ -143,14 +144,14 @@ const FiltersFull = () => {
 
         {/* Price Range */}
         <div>
-          <h4 className="font-bold mb-2">Price Range (Monthly)</h4>
+          <h4 className="font-bold mb-2">Renda mensal (MT)</h4>
           <Slider
             min={0}
-            max={10000}
+            max={100000}
             step={100}
             value={[
               localFilters.priceRange[0] ?? 0,
-              localFilters.priceRange[1] ?? 10000,
+              localFilters.priceRange[1] ?? 100000,
             ]}
             onValueChange={(value: any) =>
               setLocalFilters((prev) => ({
@@ -160,15 +161,15 @@ const FiltersFull = () => {
             }
           />
           <div className="flex justify-between mt-2">
-            <span>${localFilters.priceRange[0] ?? 0}</span>
-            <span>${localFilters.priceRange[1] ?? 10000}</span>
+            <span>{localFilters.priceRange[0] ?? 0} MT</span>
+            <span>{localFilters.priceRange[1] ?? 100000} MT</span>
           </div>
         </div>
 
         {/* Beds and Baths */}
         <div className="flex gap-4">
           <div className="flex-1">
-            <h4 className="font-bold mb-2">Beds</h4>
+            <h4 className="font-bold mb-2">Quartos</h4>
             <Select
               value={localFilters.beds || "any"}
               onValueChange={(value) =>
@@ -179,7 +180,7 @@ const FiltersFull = () => {
                 <SelectValue placeholder="Beds" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="any">Any beds</SelectItem>
+                <SelectItem value="any">Qualquer beds</SelectItem>
                 <SelectItem value="1">1+ bed</SelectItem>
                 <SelectItem value="2">2+ beds</SelectItem>
                 <SelectItem value="3">3+ beds</SelectItem>
@@ -188,7 +189,7 @@ const FiltersFull = () => {
             </Select>
           </div>
           <div className="flex-1">
-            <h4 className="font-bold mb-2">Baths</h4>
+            <h4 className="font-bold mb-2">Casas de banho</h4>
             <Select
               value={localFilters.baths || "any"}
               onValueChange={(value) =>
@@ -199,7 +200,7 @@ const FiltersFull = () => {
                 <SelectValue placeholder="Baths" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="any">Any baths</SelectItem>
+                <SelectItem value="any">Qualquer baths</SelectItem>
                 <SelectItem value="1">1+ bath</SelectItem>
                 <SelectItem value="2">2+ baths</SelectItem>
                 <SelectItem value="3">3+ baths</SelectItem>
@@ -210,7 +211,7 @@ const FiltersFull = () => {
 
         {/* Square Feet */}
         <div>
-          <h4 className="font-bold mb-2">Square Feet</h4>
+          <h4 className="font-bold mb-2">Área (m²)</h4>
           <Slider
             min={0}
             max={5000}
@@ -228,14 +229,14 @@ const FiltersFull = () => {
             className="[&>.bar]:bg-primary-700"
           />
           <div className="flex justify-between mt-2">
-            <span>{localFilters.squareFeet[0] ?? 0} sq ft</span>
-            <span>{localFilters.squareFeet[1] ?? 5000} sq ft</span>
+            <span>{localFilters.squareFeet[0] ?? 0} m²</span>
+            <span>{localFilters.squareFeet[1] ?? 5000} m²</span>
           </div>
         </div>
 
         {/* Amenities */}
         <div>
-          <h4 className="font-bold mb-2">Amenities</h4>
+          <h4 className="font-bold mb-2">Comodidades</h4>
           <div className="flex flex-wrap gap-2">
             {Object.entries(AmenityIcons).map(([amenity, Icon]) => (
               <div
@@ -259,7 +260,7 @@ const FiltersFull = () => {
 
         {/* Available From */}
         <div>
-          <h4 className="font-bold mb-2">Available From</h4>
+          <h4 className="font-bold mb-2">Disponível a partir de</h4>
           <Input
             type="date"
             value={
@@ -277,7 +278,7 @@ const FiltersFull = () => {
           />
         </div>
 
-        {/* Apply and Reset buttons */}
+        {/* Aplicar and Reset buttons */}
         <div className="flex gap-4 mt-6">
           <Button
             onClick={handleSubmit}
@@ -290,7 +291,7 @@ const FiltersFull = () => {
             variant="outline"
             className="flex-1 rounded-xl"
           >
-            Reset Filters
+            Limpar filtros
           </Button>
         </div>
       </div>

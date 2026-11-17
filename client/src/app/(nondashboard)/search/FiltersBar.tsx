@@ -73,13 +73,14 @@ const FiltersBar = () => {
   };
 
   const handleLocationSearch = async () => {
+    if (!process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) { dispatch(setFilters({ location: searchInput })); return; }
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           searchInput
         )}.json?access_token=${
           process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-        }&fuzzyMatch=true`
+        }&country=mz&language=pt&fuzzyMatch=true`
       );
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -100,7 +101,7 @@ const FiltersBar = () => {
     <div className="flex justify-between items-center w-full py-5">
       {/* Filters */}
       <div className="flex justify-between items-center gap-4 p-2">
-        {/* All Filters */}
+        {/* Todos os filtros */}
         <Button
           variant="outline"
           className={cn(
@@ -110,7 +111,7 @@ const FiltersBar = () => {
           onClick={() => dispatch(toggleFiltersFullOpen())}
         >
           <Filter className="w-4 h-4" />
-          <span>All Filters</span>
+          <span>Todos os filtros</span>
         </Button>
 
         {/* Search Location */}
@@ -132,7 +133,7 @@ const FiltersBar = () => {
 
         {/* Price Range */}
         <div className="flex gap-1">
-          {/* Minimum Price Selector */}
+          {/* Mínimo Price Selector */}
           <Select
             value={filters.priceRange[0]?.toString() || "any"}
             onValueChange={(value) =>
@@ -145,16 +146,16 @@ const FiltersBar = () => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-white">
-              <SelectItem value="any">Any Min Price</SelectItem>
-              {[500, 1000, 1500, 2000, 3000, 5000, 10000].map((price) => (
+              <SelectItem value="any">Renda mínima</SelectItem>
+              {[5000, 10000, 15000, 25000, 50000, 75000, 100000].map((price) => (
                 <SelectItem key={price} value={price.toString()}>
-                  ${price / 1000}k+
+                  {price / 1000} mil MT+
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Maximum Price Selector */}
+          {/* Máximo Price Selector */}
           <Select
             value={filters.priceRange[1]?.toString() || "any"}
             onValueChange={(value) =>
@@ -167,10 +168,10 @@ const FiltersBar = () => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-white">
-              <SelectItem value="any">Any Max Price</SelectItem>
-              {[1000, 2000, 3000, 5000, 10000].map((price) => (
+              <SelectItem value="any">Renda máxima</SelectItem>
+              {[10000, 15000, 25000, 50000, 75000, 100000].map((price) => (
                 <SelectItem key={price} value={price.toString()}>
-                  &lt;${price / 1000}k
+                  Até {price / 1000} mil MT
                 </SelectItem>
               ))}
             </SelectContent>
@@ -188,7 +189,7 @@ const FiltersBar = () => {
               <SelectValue placeholder="Beds" />
             </SelectTrigger>
             <SelectContent className="bg-white">
-              <SelectItem value="any">Any Beds</SelectItem>
+              <SelectItem value="any">Quartos</SelectItem>
               <SelectItem value="1">1+ bed</SelectItem>
               <SelectItem value="2">2+ beds</SelectItem>
               <SelectItem value="3">3+ beds</SelectItem>
@@ -205,7 +206,7 @@ const FiltersBar = () => {
               <SelectValue placeholder="Baths" />
             </SelectTrigger>
             <SelectContent className="bg-white">
-              <SelectItem value="any">Any Baths</SelectItem>
+              <SelectItem value="any">Casas de banho</SelectItem>
               <SelectItem value="1">1+ bath</SelectItem>
               <SelectItem value="2">2+ baths</SelectItem>
               <SelectItem value="3">3+ baths</SelectItem>
@@ -224,7 +225,7 @@ const FiltersBar = () => {
             <SelectValue placeholder="Home Type" />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            <SelectItem value="any">Any Property Type</SelectItem>
+            <SelectItem value="any">Tipo de imóvel</SelectItem>
             {Object.entries(PropertyTypeIcons).map(([type, Icon]) => (
               <SelectItem key={type} value={type}>
                 <div className="flex items-center">

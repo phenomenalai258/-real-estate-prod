@@ -11,11 +11,13 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { FiltersState } from ".";
 
+export type PropertyChanges = Partial<Pick<Property, "name" | "description" | "pricePerMonth" | "securityDeposit" | "applicationFee" | "isPetsAllowed" | "isParkingIncluded" | "isPublished">>;
+
 export const api = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:3002",
     prepareHeaders: async (headers) => {
-      const session = await fetchAuthSession();
+      const session = await fetchAuthSession().catch(() => ({ tokens: undefined }));
       const { idToken } = session.tokens ?? {};
       if (idToken) {
         headers.set("Authorization", `Bearer ${idToken}`);
@@ -62,6 +64,7 @@ export const api = createApi({
             );
           }
 
+          if (userDetailsResponse.error) return { error: userDetailsResponse.error };
           return {
             data: {
               cognitoInfo: { ...user },
@@ -88,8 +91,8 @@ export const api = createApi({
           beds: filters.beds,
           baths: filters.baths,
           propertyType: filters.propertyType,
-          squareFeetMin: filters.squareFeet?.[0],
-          squareFeetMax: filters.squareFeet?.[1],
+          squareFeetMin: filters.squareFeet?.[0] == null ? undefined : Math.round(filters.squareFeet[0] / 0.09290304),
+          squareFeetMax: filters.squareFeet?.[1] == null ? undefined : Math.round(filters.squareFeet[1] / 0.09290304),
           amenities: filters.amenities?.join(","),
           availableFrom: filters.availableFrom,
           favoriteIds: filters.favoriteIds?.join(","),
@@ -108,7 +111,7 @@ export const api = createApi({
           : [{ type: "Properties", id: "LIST" }],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
-          error: "Failed to fetch properties.",
+          error: "Não foi possível carregar os imóveis.",
         });
       },
     }),
@@ -118,12 +121,24 @@ export const api = createApi({
       providesTags: (result, error, id) => [{ type: "PropertyDetails", id }],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
-          error: "Failed to load property details.",
+          error: "Não foi possível carregar este imóvel.",
         });
       },
     }),
 
     // tenant related endpoints
+    getManagedProperty: build.query<Property, number>({
+      query: (id) => `properties/${id}/manage`,
+      providesTags: (_result, _error, id) => [{ type: "PropertyDetails", id }],
+    }),
+
+    updateProperty: build.mutation<{ id: number } & PropertyChanges, { id: number; changes: PropertyChanges }>({
+      query: ({ id, changes }) => ({ url: `properties/${id}`, method: "PATCH", body: changes }),
+      invalidatesTags: (result, _error, { id }) => result ? [
+        { type: "PropertyDetails", id }, { type: "Properties", id: "LIST" }, "Applications",
+      ] : [],
+    }),
+
     getTenant: build.query<Tenant, string>({
       query: (cognitoId) => `tenants/${cognitoId}`,
       providesTags: (result) => [{ type: "Tenants", id: result?.id }],
@@ -255,15 +270,15 @@ export const api = createApi({
       ],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
-          success: "Property created successfully!",
-          error: "Failed to create property.",
+          success: "Imóvel publicado.",
+          error: "Não foi possível publicar o imóvel.",
         });
       },
     }),
 
     // lease related enpoints
     getLeases: build.query<Lease[], number>({
-      query: () => "leases",
+      query: (propertyId) => ({ url: "leases", params: { propertyId } }),
       providesTags: ["Leases"],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
@@ -328,7 +343,7 @@ export const api = createApi({
       invalidatesTags: ["Applications", "Leases"],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
-          success: "Application status updated successfully!",
+          success: "Candidatura actualizada.",
           error: "Failed to update application settings.",
         });
       },
@@ -343,8 +358,8 @@ export const api = createApi({
       invalidatesTags: ["Applications"],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
-          success: "Application created successfully!",
-          error: "Failed to create applications.",
+          success: "Candidatura enviada.",
+          error: "Não foi possível enviar a candidatura.",
         });
       },
     }),
@@ -357,6 +372,8 @@ export const {
   useUpdateManagerSettingsMutation,
   useGetPropertiesQuery,
   useGetPropertyQuery,
+  useGetManagedPropertyQuery,
+  useUpdatePropertyMutation,
   useGetCurrentResidencesQuery,
   useGetManagerPropertiesQuery,
   useCreatePropertyMutation,

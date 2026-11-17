@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/locale";
 import { Mail, MapPin, PhoneCall } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
@@ -19,7 +20,7 @@ const ApplicationCard = ({
       : "bg-yellow-500";
 
   const contactPerson =
-    userType === "manager" ? application.tenant : application.manager;
+    userType === "manager" ? application : application.manager;
 
   return (
     <div className="border rounded-xl overflow-hidden shadow-sm bg-white mb-4">
@@ -46,8 +47,8 @@ const ApplicationCard = ({
               </div>
             </div>
             <div className="text-xl font-semibold">
-              ${application.property.pricePerMonth}{" "}
-              <span className="text-sm font-normal">/ month</span>
+              {formatMoney(application.property.pricePerMonth)}{" "}
+              <span className="text-sm font-normal">/ mês</span>
             </div>
           </div>
         </div>
@@ -59,26 +60,26 @@ const ApplicationCard = ({
         <div className="flex flex-col justify-between w-full lg:basis-2/12 lg:h-48 py-2 gap-3 lg:gap-0">
           <div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500">Status:</span>
+              <span className="text-gray-500">Estado:</span>
               <span
                 className={`px-2 py-1 ${statusColor} text-white rounded-full text-sm`}
               >
-                {application.status}
+                {application.status === "Pending" ? "Em análise" : application.status === "Approved" ? "Aprovada" : "Recusada"}
               </span>
             </div>
             <hr className="mt-3" />
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Start Date:</span>{" "}
-            {new Date(application.lease?.startDate).toLocaleDateString()}
+            <span className="text-gray-500">Início:</span>{" "}
+            {application.lease?.startDate ? new Date(application.lease.startDate).toLocaleDateString("pt-MZ") : "Por acordar"}
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">End Date:</span>{" "}
-            {new Date(application.lease?.endDate).toLocaleDateString()}
+            <span className="text-gray-500">Fim:</span>{" "}
+            {application.lease?.endDate ? new Date(application.lease.endDate).toLocaleDateString("pt-MZ") : "Por acordar"}
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Next Payment:</span>{" "}
-            {new Date(application.lease?.nextPaymentDate).toLocaleDateString()}
+            <span className="text-gray-500">Pagamentos:</span>{" "}
+            {"Sem cobrança na plataforma"}
           </div>
         </div>
 
@@ -118,6 +119,7 @@ const ApplicationCard = ({
         </div>
       </div>
 
+      {application.message && <p className="px-6 pb-4 whitespace-pre-wrap"><strong>Mensagem: </strong>{application.message}</p>}
       <hr className="my-4" />
       {children}
     </div>

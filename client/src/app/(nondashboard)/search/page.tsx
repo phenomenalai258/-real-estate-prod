@@ -3,7 +3,7 @@
 import { NAVBAR_HEIGHT } from "@/lib/constants";
 import { useAppDispatch, useAppSelector } from "@/state/redux";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import FiltersBar from "./FiltersBar";
 import FiltersFull from "./FiltersFull";
 import { cleanParams } from "@/lib/utils";
@@ -21,7 +21,7 @@ const SearchPage = () => {
   useEffect(() => {
     const initialFilters = Array.from(searchParams.entries()).reduce(
       (acc: any, [key, value]) => {
-        if (key === "priceRange" || key === "squareFeet") {
+        if (key === "amenities") { acc[key] = value.split(","); } else if (key === "priceRange" || key === "squareFeet") {
           acc[key] = value.split(",").map((v) => (v === "" ? null : Number(v)));
         } else if (key === "coordinates") {
           acc[key] = value.split(",").map(Number);
@@ -36,7 +36,7 @@ const SearchPage = () => {
 
     const cleanedFilters = cleanParams(initialFilters);
     dispatch(setFilters(cleanedFilters));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, dispatch]);
 
   return (
     <div
@@ -57,7 +57,7 @@ const SearchPage = () => {
           <FiltersFull />
         </div>
         <Map />
-        <div className="basis-4/12 overflow-y-auto">
+        <div className="grow md:basis-4/12 overflow-y-auto">
           <Listings />
         </div>
       </div>
@@ -65,4 +65,4 @@ const SearchPage = () => {
   );
 };
 
-export default SearchPage;
+export default function Page() { return <Suspense fallback={<p>A carregar pesquisa…</p>}><SearchPage /></Suspense>; }

@@ -1,4 +1,5 @@
 "use client";
+import { formatMoney } from "@/lib/locale";
 
 import Loading from "@/components/Loading";
 import {
@@ -103,7 +104,7 @@ const ResidenceCard = ({
             </div>
           </div>
           <div className="text-xl font-bold">
-            ${currentLease.rent}{" "}
+            {formatMoney(currentLease.rent)}{" "}
             <span className="text-gray-500 text-sm font-normal">/ night</span>
           </div>
         </div>
@@ -113,23 +114,23 @@ const ResidenceCard = ({
         <hr className="my-4" />
         <div className="flex justify-between items-center">
           <div className="xl:flex">
-            <div className="text-gray-500 mr-2">Start Date: </div>
+            <div className="text-gray-500 mr-2">Início: </div>
             <div className="font-semibold">
-              {new Date(currentLease.startDate).toLocaleDateString()}
+              {new Date(currentLease.startDate).toLocaleDateString("pt-MZ")}
             </div>
           </div>
           <div className="border-[0.5px] border-primary-300 h-4" />
           <div className="xl:flex">
-            <div className="text-gray-500 mr-2">End Date: </div>
+            <div className="text-gray-500 mr-2">Fim: </div>
             <div className="font-semibold">
-              {new Date(currentLease.endDate).toLocaleDateString()}
+              {new Date(currentLease.endDate).toLocaleDateString("pt-MZ")}
             </div>
           </div>
           <div className="border-[0.5px] border-primary-300 h-4" />
           <div className="xl:flex">
-            <div className="text-gray-500 mr-2">Next Payment: </div>
+            <div className="text-gray-500 mr-2">Pagamentos: </div>
             <div className="font-semibold">
-              {new Date(currentLease.endDate).toLocaleDateString()}
+              {new Date(currentLease.endDate).toLocaleDateString("pt-MZ")}
             </div>
           </div>
         </div>
@@ -139,7 +140,7 @@ const ResidenceCard = ({
       <div className="flex justify-end gap-2 w-full">
         <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50">
           <User className="w-5 h-5 mr-2" />
-          Manager
+          Proprietário
         </button>
         <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50">
           <Download className="w-5 h-5 mr-2" />
@@ -208,9 +209,9 @@ const BillingHistory = ({ payments }: { payments: Payment[] }) => {
                   </span>
                 </TableCell>
                 <TableCell>
-                  {new Date(payment.paymentDate).toLocaleDateString()}
+                  {new Date(payment.paymentDate).toLocaleDateString("pt-MZ")}
                 </TableCell>
-                <TableCell>${payment.amountPaid.toFixed(2)}</TableCell>
+                <TableCell>{formatMoney(payment.amountPaid)}</TableCell>
                 <TableCell>
                   <button className="border border-gray-300 text-gray-700 py-2 px-4 rounded-md flex items-center justify-center font-semibold hover:bg-primary-700 hover:text-primary-50">
                     <ArrowDownToLineIcon className="w-4 h-4 mr-1" />

@@ -1,12 +1,16 @@
+import { respondError } from "../lib/http";
 import { Request, Response } from "express";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma, PropertyType, Amenity, Highlight } from "@prisma/client";
 import { wktToGeoJSON } from "@terraformer/wkt";
-import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { Location } from "@prisma/client";
 import { Upload } from "@aws-sdk/lib-storage";
-import axios from "axios";
 
-const prisma = new PrismaClient();
+
+import { prisma } from "../lib/prisma";
+import { HttpError, positiveId, textField } from "../lib/http";
+import { randomUUID } from "crypto";
+import { propertyUpdates } from "../lib/propertyUpdates";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -32,10 +36,24 @@ export const getProperties = async (
       longitude,
     } = req.query;
 
-    let whereConditions: Prisma.Sql[] = [];
+    for (const key of ["priceMin", "priceMax", "beds", "baths", "squareFeetMin", "squareFeetMax", "latitude", "longitude"]) {
+      const value = req.query[key];
+      if (value !== undefined && value !== "any" && (typeof value !== "string" || !value.trim() || !Number.isFinite(Number(value)))) throw new HttpError(400, "Filtro numérico inválido.");
+    }
+    if (propertyType && propertyType !== "any" && !Object.values(PropertyType).includes(propertyType as PropertyType)) throw new HttpError(400, "Tipo de imóvel inválido.");
+    const whereConditions: Prisma.Sql[] = [Prisma.sql`p."isPublished" = true`];
+
+    if (req.query.location !== undefined) {
+      const location = textField(req.query.location, "Localização");
+      const pattern = `%${location}%`;
+      whereConditions.push(Prisma.sql`(l.city ILIKE ${pattern} OR l.address ILIKE ${pattern} OR l.state ILIKE ${pattern})`);
+    }
+    if (availableFrom && availableFrom !== "any" && (typeof availableFrom !== "string" || !Number.isFinite(Date.parse(availableFrom)))) throw new HttpError(400, "Data inválida.");
+    if ((latitude && Math.abs(Number(latitude)) > 90) || (longitude && Math.abs(Number(longitude)) > 180)) throw new HttpError(400, "Coordenadas inválidas.");
 
     if (favoriteIds) {
-      const favoriteIdsArray = (favoriteIds as string).split(",").map(Number);
+      if (typeof favoriteIds !== "string") throw new HttpError(400, "Favoritos inválidos.");
+      const favoriteIdsArray = favoriteIds.split(",").map(positiveId);
       whereConditions.push(
         Prisma.sql`p.id IN (${Prisma.join(favoriteIdsArray)})`
       );
@@ -80,8 +98,10 @@ export const getProperties = async (
     }
 
     if (amenities && amenities !== "any") {
-      const amenitiesArray = (amenities as string).split(",");
-      whereConditions.push(Prisma.sql`p.amenities @> ${amenitiesArray}`);
+      if (typeof amenities !== "string") throw new HttpError(400, "Comodidades inválidas.");
+      const amenitiesArray = amenities.split(",");
+      if (amenitiesArray.some(value => !Object.values(Amenity).includes(value as Amenity))) throw new HttpError(400, "Comodidades inválidas.");
+      whereConditions.push(Prisma.sql`p.amenities @> ${amenitiesArray}::"Amenity"[]`);
     }
 
     if (availableFrom && availableFrom !== "any") {
@@ -91,10 +111,11 @@ export const getProperties = async (
         const date = new Date(availableFromDate);
         if (!isNaN(date.getTime())) {
           whereConditions.push(
-            Prisma.sql`EXISTS (
+            Prisma.sql`NOT EXISTS (
               SELECT 1 FROM "Lease" l 
               WHERE l."propertyId" = p.id 
-              AND l."startDate" <= ${date.toISOString()}
+              AND l."startDate" <= ${date}
+              AND l."endDate" > ${date}
             )`
           );
         }
@@ -104,14 +125,13 @@ export const getProperties = async (
     if (latitude && longitude) {
       const lat = parseFloat(latitude as string);
       const lng = parseFloat(longitude as string);
-      const radiusInKilometers = 1000;
-      const degrees = radiusInKilometers / 111; // Converts kilometers to degrees
+      const radiusInMeters = 50000;
 
       whereConditions.push(
         Prisma.sql`ST_DWithin(
-          l.coordinates::geometry,
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
-          ${degrees}
+          l.coordinates,
+          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+          ${radiusInMeters}
         )`
       );
     }
@@ -143,21 +163,23 @@ export const getProperties = async (
     const properties = await prisma.$queryRaw(completeQuery);
 
     res.json(properties);
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: `Error retrieving properties: ${error.message}` });
+  } catch (error: unknown) {
+    respondError(res, error);
   }
 };
 
 export const getProperty = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<void> => getPropertyDetails(req, res, false);
+
+export const getManagedProperty = async (req: Request, res: Response): Promise<void> => getPropertyDetails(req, res, true);
+
+const getPropertyDetails = async (req: Request, res: Response, managed: boolean): Promise<void> => {
   try {
     const { id } = req.params;
-    const property = await prisma.property.findUnique({
-      where: { id: Number(id) },
+    const property = await prisma.property.findFirst({
+      where: { id: positiveId(id), ...(managed ? { managerCognitoId: req.user!.id } : { isPublished: true }) },
       include: {
         location: true,
       },
@@ -182,18 +204,28 @@ export const getProperty = async (
         },
       };
       res.json(propertyWithCoordinates);
-    }
-  } catch (err: any) {
-    res
-      .status(500)
-      .json({ message: `Error retrieving property: ${err.message}` });
+    } else { res.status(404).json({ message: "Imóvel não encontrado." }); }
+  } catch (error: unknown) {
+    respondError(res, error);
   }
+};
+
+export const updateProperty = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = positiveId(req.params.id);
+    const data = propertyUpdates(req.body);
+    // An atomic ownership predicate prevents editing another manager's listing.
+    const result = await prisma.property.updateMany({ where: { id, managerCognitoId: req.user!.id }, data });
+    if (!result.count) throw new HttpError(404, "Imóvel não encontrado.");
+    res.json({ id, ...data });
+  } catch (error) { respondError(res, error); }
 };
 
 export const createProperty = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const uploaded: string[] = [];
   try {
     const files = req.files as Express.Multer.File[];
     const {
@@ -202,15 +234,47 @@ export const createProperty = async (
       state,
       country,
       postalCode,
-      managerCognitoId,
+      managerCognitoId: _untrustedManagerId,
+      latitude: rawLatitude,
+      longitude: rawLongitude,
       ...propertyData
     } = req.body;
 
-    const photoUrls = await Promise.all(
-      files.map(async (file) => {
+    const managerCognitoId = req.user!.id;
+    const numeric = (key: string, min: number, max: number, integer = false) => {
+      const value = Number(propertyData[key]);
+      if (propertyData[key] === undefined || propertyData[key] === "" || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) throw new HttpError(400, key + " inválido.");
+    };
+    for (const key of ["name", "description"]) textField(propertyData[key], key, key === "description" ? 10000 : 200);
+    for (const [key, value] of Object.entries({ address, city, state, country })) textField(value, key);
+    if (!["moçambique", "mozambique", "mz"].includes(country.toLowerCase())) throw new HttpError(400, "Indique um imóvel em Moçambique.");
+    numeric("pricePerMonth", 1, 100000000);
+    numeric("securityDeposit", 0, 100000000);
+    numeric("applicationFee", 0, 100000000);
+    numeric("beds", 0, 100, true);
+    numeric("baths", 0, 100);
+    numeric("squareFeet", 1, 10000000, true);
+    if (!Object.values(PropertyType).includes(propertyData.propertyType)) throw new HttpError(400, "Tipo de imóvel inválido.");
+    for (const [key, allowed] of [["amenities", Object.values(Amenity)], ["highlights", Object.values(Highlight)]] as const) {
+      if (typeof propertyData[key] !== "string" || propertyData[key].split(",").filter(Boolean).some((v: string) => !(allowed as readonly string[]).includes(v))) throw new HttpError(400, "Características inválidas.");
+    }
+    for (const key of ["isPetsAllowed", "isParkingIncluded"]) if (!["true", "false"].includes(propertyData[key])) throw new HttpError(400, "Condição inválida.");
+    const latitude = Number(rawLatitude), longitude = Number(rawLongitude);
+    if (rawLatitude === undefined || rawLongitude === undefined || rawLatitude === "" || rawLongitude === "" || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) throw new HttpError(400, "Indique coordenadas válidas.");
+    if (!files?.length) throw new HttpError(400, "Adicione pelo menos uma fotografia.");
+    for (const file of files) {
+      const b = file.buffer;
+      const valid = (file.mimetype === "image/jpeg" && b.subarray(0,3).equals(Buffer.from([255,216,255]))) ||
+        (file.mimetype === "image/png" && b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) ||
+        (file.mimetype === "image/webp" && b.toString("ascii",0,4) === "RIFF" && b.toString("ascii",8,12) === "WEBP");
+      if (!valid) throw new HttpError(400, "Fotografia inválida.");
+    }
+    if (!process.env.S3_BUCKET_NAME || !process.env.AWS_REGION) throw new HttpError(503, "Armazenamento de fotografias ainda não configurado.");
+    const photoUrls: string[] = [];
+    for (const file of files) {
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
-          Key: `properties/${Date.now()}-${file.originalname}`,
+          Key: `properties/${randomUUID()}`,
           Body: file.buffer,
           ContentType: file.mimetype,
         };
@@ -220,54 +284,35 @@ export const createProperty = async (
           params: uploadParams,
         }).done();
 
-        return uploadResult.Location;
-      })
-    );
+        uploaded.push(uploadParams.Key);
+        if (!uploadResult.Location) throw new Error("Missing image location");
+        photoUrls.push(uploadResult.Location);
+    }
 
-    const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
-      {
-        street: address,
-        city,
-        country,
-        postalcode: postalCode,
-        format: "json",
-        limit: "1",
-      }
-    ).toString()}`;
-    const geocodingResponse = await axios.get(geocodingUrl, {
-      headers: {
-        "User-Agent": "RealEstateApp (justsomedummyemail@gmail.com",
-      },
-    });
-    const [longitude, latitude] =
-      geocodingResponse.data[0]?.lon && geocodingResponse.data[0]?.lat
-        ? [
-            parseFloat(geocodingResponse.data[0]?.lon),
-            parseFloat(geocodingResponse.data[0]?.lat),
-          ]
-        : [0, 0];
-
-    // create location
-    const [location] = await prisma.$queryRaw<Location[]>`
+    const newProperty = await prisma.$transaction(async tx => {
+    // Location and property must be committed together.
+    const [location] = await tx.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
 
     // create property
-    const newProperty = await prisma.property.create({
+    return tx.property.create({
       data: {
-        ...propertyData,
+        name: propertyData.name,
+        description: propertyData.description,
+        propertyType: propertyData.propertyType,
         photoUrls,
         locationId: location.id,
         managerCognitoId,
         amenities:
           typeof propertyData.amenities === "string"
-            ? propertyData.amenities.split(",")
+            ? propertyData.amenities.split(",").filter(Boolean)
             : [],
         highlights:
           typeof propertyData.highlights === "string"
-            ? propertyData.highlights.split(",")
+            ? propertyData.highlights.split(",").filter(Boolean)
             : [],
         isPetsAllowed: propertyData.isPetsAllowed === "true",
         isParkingIncluded: propertyData.isParkingIncluded === "true",
@@ -284,10 +329,13 @@ export const createProperty = async (
       },
     });
 
+    });
     res.status(201).json(newProperty);
-  } catch (err: any) {
-    res
-      .status(500)
-      .json({ message: `Error creating property: ${err.message}` });
+  } catch (error: unknown) {
+    if (uploaded.length) {
+      try { await s3Client.send(new DeleteObjectsCommand({ Bucket: process.env.S3_BUCKET_NAME, Delete: { Objects: uploaded.map(Key => ({ Key })) } })); }
+      catch { console.error("Falha ao limpar fotografias de uma publicação interrompida."); }
+    }
+    respondError(res, error);
   }
 };

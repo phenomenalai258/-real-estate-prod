@@ -11,7 +11,7 @@ const TenantSettings = () => {
   const { data: authUser, isLoading } = useGetAuthUserQuery();
   const [updateTenant] = useUpdateTenantSettingsMutation();
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return <>A carregar…</>;
 
   const initialData = {
     name: authUser?.userInfo.name,
